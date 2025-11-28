@@ -187,13 +187,13 @@ const validarFormulario = (e) => {
       break;
     // 6) Consentimientos
     case "tos":
-      validacionCheckbox(e.target, "tos", true);
+      validarCheckbox(e.target, "tos", true);
       break;
     case "rgpd":
-      validacionCheckbox(e.target, "rgpd", true);
+      validarCheckbox(e.target, "rgpd", true);
       break;
     case "promo":
-      validacionCheckbox(e.target, "promo", false);
+      validarCheckbox(e.target, "promo", false);
       break;
   }
 };
@@ -457,7 +457,7 @@ const validarGrupoCheckbox = (nombreGrupo, obligatorio) => {
 };
 
 // PASO 4: Validacion checkbox individual
-const validacionCheckbox = (input, campo, obligatorio) => {
+const validarCheckbox = (input, campo, obligatorio) => {
   if (obligatorio && !input.checked) {
     showError(input, `${campo}-error`, `Debe aceptar para continuar.`);
     campos[campo] = false;
@@ -488,6 +488,12 @@ textarea.addEventListener("blur", validarFormulario);
 
 // PASO 1 - Acceder al form
 form.addEventListener("submit", (e) => {
+  const checkboxesObligatorios = ["tos", "rgpd"];
+  checkboxesObligatorios.forEach((campo) => {
+    const input = document.querySelector(`input[name="${campo}"]`);
+    validarCheckbox(input, campo, true);
+  });
+
   if (
     campos["nombre"] &&
     campos["apellidos"] &&
