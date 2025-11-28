@@ -3,6 +3,7 @@ const inputs = document.querySelectorAll("#form-inscripcion input");
 const selects = document.querySelectorAll("#form-inscripcion select");
 
 const expresiones = {
+  sin_expresion: "",
   nombre: /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s']{3,40}$/, // Nombre de 3-40 caracteres, sin signos especiales (a excepción algunos)
   dni: /^[0-9]{8}[A-Za-z]$/, // Expresión regular para DNI
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -10,6 +11,7 @@ const expresiones = {
   direccion: /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s.]{3,60},?\s[0-9]{1,5}[A-Za-z0-9-]*$/,
   ciudad: /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s.-]{2,60}$/,
   cp: /^[0-9]{5}$/,
+  altura: /^\d+$/, // Sólo dígitos
 };
 
 const campos = {
@@ -28,9 +30,8 @@ const campos = {
   ciudad: false,
   cp: false,
   // 3) Datos Médicos y objetivos
+  altura: false,
 };
-
-// const control = input.closest(".control") || input.parentElement;
 
 // SHOW ERROR
 function showError(input, errorId, message) {
@@ -122,6 +123,7 @@ const validarFormulario = (e) => {
       break;
     // 3) Datos Médicos
     case "altura":
+      validarCampo(expresiones.altura, e.target, "altura");
       break;
     case "peso":
       break;
@@ -149,27 +151,34 @@ const validarFormulario = (e) => {
 // PASO 4: Validación de cada campo (inputs)
 // nombre, apellidos, dni, email, telefono
 const validarCampo = (expresion, input, campo) => {
-  // Validación de contaact_pref
+  // Validación de contacto_pref
   if (input.type === "radio") {
     const valoresValidos = {
       contacto_pref: ["email", "tel", "whatsapp"],
     };
 
     // Comprobar valor dentro de opciones
-    if (input.value && !valoresValidos[campo].includes(input.value)) {
+    if (!valoresValidos[campo].includes(input.value)) {
       showError(input, `${campo}-error`, "Seleccione una valor válido.");
-      campos[campo] = false;
-      return;
-    }
-
-    if (input.value === "") {
-      showError(input, `${campo}-error`, `Selecciona un valor.`);
       campos[campo] = false;
     } else {
       clearError(input, `${campo}-error`);
       campos[campo] = true;
     }
-  } else if (expresion.test(input.value.trim())) {
+    return;
+  }
+
+  if (expresion.test(input.value.trim())) {
+    // Validación Altura
+    if (input.name === "altura") {
+      const altura = parseInt(input.value);
+
+      if (altura < 20 || altura > 250) {
+        showError(input, `${campo}-error`, `Verifique ${campo} (20cm - 250cm)`);
+        campos[campo] = false;
+        return;
+      }
+    }
     clearError(input, `${campo}-error`);
     campos[campo] = true;
   } else {
@@ -265,22 +274,23 @@ selects.forEach((select) => {
 // PASO 1 - Acceder al form
 form.addEventListener("submit", (e) => {
   if (
-    campos["nombre"] &&
-    campos["apellidos"] &&
-    campos["dni"] &&
-    campos["fecha_nacimiento"] &&
-    campos["sexo"] &&
-    campos["estado_civil"] &&
-    campos["email"] &&
-    campos["telefono"] &&
-    campos["contacto_pref"] &&
-    campos["direccion"] &&
-    campos["ciudad"] &&
-    campos["cp"]
+    // campos["nombre"] &&
+    // campos["apellidos"] &&
+    // campos["dni"] &&
+    // campos["fecha_nacimiento"] &&
+    // campos["sexo"] &&
+    // campos["estado_civil"] &&
+    // campos["email"] &&
+    // campos["telefono"] &&
+    // campos["contacto_pref"] &&
+    // campos["direccion"] &&
+    // campos["ciudad"] &&
+    // campos["cp"] &&
+    campos["altura"]
   ) {
     alert("Enviado!");
     form.submit();
-    form.reset();
+    // form.reset();
   } else {
     alert("Nope");
     e.preventDefault();
