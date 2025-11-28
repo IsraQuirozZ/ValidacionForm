@@ -1,6 +1,7 @@
 const form = document.getElementById("form-inscripcion");
 const inputs = document.querySelectorAll("#form-inscripcion input");
 const selects = document.querySelectorAll("#form-inscripcion select");
+const textarea = document.querySelector("#form-inscripcion textarea");
 
 const expresiones = {
   sin_expresion: "",
@@ -12,6 +13,7 @@ const expresiones = {
   ciudad: /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s.-]{2,60}$/,
   cp: /^[0-9]{5}$/,
   altura: /^\d+$/, // Sólo dígitos
+  peso: /^[0-9]{1,3}(\.[0-9]{1,2})?$/, // Dígitos, punto
 };
 
 const campos = {
@@ -31,6 +33,15 @@ const campos = {
   cp: false,
   // 3) Datos Médicos y objetivos
   altura: false,
+  peso: false,
+  nivel: true, // Select, No obligatorio
+  objetivos: true, // Máximo 3 palabras o nada
+  condiciones: true, // Checkbox
+  // 4) Plan y horarios
+  plan: false, // Select, Obligatorio
+  dias: true, // Checkbox
+  hora: false,
+  clases: false,
 };
 
 // SHOW ERROR
@@ -126,12 +137,29 @@ const validarFormulario = (e) => {
       validarCampo(expresiones.altura, e.target, "altura");
       break;
     case "peso":
+      validarCampo(expresiones.peso, e.target, "peso");
       break;
-    case "condiciones": // Revisar que son checkbox x5
+    case "nivel":
+      validarSelect(e.target, "nivel", false);
       break;
-    case "dias": // Checkboxes x6
+    case "objetivos":
+      validarTextarea(e.target, "objetivos", false);
       break;
-    case "referido":
+    case "condiciones[]": // Revisar que son checkbox x5
+      validarGrupoCheckbox("condiciones", false);
+      break;
+    // 4) Plan y horarios
+    case "plan":
+      validarSelect(e.target, "plan", true);
+      break;
+    case "dias[]": // Checkboxes x6
+      validarGrupoCheckbox("dias", false);
+      break;
+    case "hora":
+      validarSelect(e.target, "hora", false);
+      break;
+    case "clases":
+      validarSelect(e.target, "clases", false);
       break;
     case "nif_factura":
       break;
@@ -173,12 +201,31 @@ const validarCampo = (expresion, input, campo) => {
     if (input.name === "altura") {
       const altura = parseInt(input.value);
 
-      if (altura < 20 || altura > 250) {
-        showError(input, `${campo}-error`, `Verifique ${campo} (20cm - 250cm)`);
+      if (altura < 120 || altura > 230) {
+        showError(
+          input,
+          `${campo}-error`,
+          `Verifique ${campo} (120cm - 230cm)`
+        );
         campos[campo] = false;
         return;
       }
     }
+
+    // Validación Peso
+    if (input.name === "peso") {
+      const peso = parseFloat(input.value);
+      if (peso < 35 || peso > 250) {
+        showError(
+          input,
+          `${campo}-error`,
+          `Verifique "${campo}" (35kg - 250kg, máximo 2 decimales)`
+        );
+        campos[campo] = false;
+        return;
+      }
+    }
+
     clearError(input, `${campo}-error`);
     campos[campo] = true;
   } else {
@@ -231,16 +278,61 @@ const validarFechaNacimiento = (input, campo) => {
   campos[campo] = true;
 };
 
+//  PASO 4: Validación de textarea -> Objetivos
+const validarTextarea = (textarea, campo, obligatorio) => {
+  const texto = textarea.value.trim();
+
+  if (!obligatorio && texto === "") {
+    clearError(textarea, `${campo}-error`);
+    campos[campo] = true;
+    return;
+  }
+
+  const regexObjetivos = /^[\wÁÉÍÓÚÜÑáéíóúüñ.,\s]+$/;
+
+  if (!regexObjetivos.test(texto)) {
+    showError(
+      textarea,
+      `${campo}-error`,
+      `Debe estar vacío o tener 3 palabras mínimo.`
+    );
+    campos[campo] = false;
+    return;
+  }
+
+  const palabrasValidas = texto
+    .split(/\s+/)
+    .filter((p) => p.replace(/[.,]/g, "").length >= 2);
+
+  if (palabrasValidas.length < 3) {
+    showError(
+      textarea,
+      `${campo}-error`,
+      `Debe estar vacío o tener 3 palabras mínimo.`
+    );
+    campos[campo] = false;
+    return;
+  }
+
+  clearError(textarea, `${campo}-error`);
+  campos[campo] = true;
+};
+
 // PASO 4: Validacion campos select (solo select, no todos son obligatorios)
-// sexo, estado_civil,
+// sexo, estado_civil, nivel, plan
 const validarSelect = (select, campo, obligatorio) => {
   // Array de opciones (podemos meterlas manual, para que no se alteren desde el navegador)
   const valoresValidos = {
     sexo: ["f", "m", "x"],
     estado_civil: ["s", "c", "ph", "d", "v"],
+    nivel: ["s", "l", "m", "i", "a"],
+    plan: ["mensual", "trimestral", "anual", "premium"],
+    hora: ["mañana_a", "mañana_b", "tarde_a", "tarde_b", "noche"],
   };
 
   // Comprobar valor dentro de opciones
+  console.log(select.value);
+
   if (select.value && !valoresValidos[campo].includes(select.value)) {
     showError(select, `${campo}-error`, "Seleccione una valor válido.");
     campos[campo] = false;
@@ -250,26 +342,85 @@ const validarSelect = (select, campo, obligatorio) => {
   if (obligatorio && select.value === "") {
     showError(select, `${campo}-error`, `Selecciona un valor.`);
     campos[campo] = false;
-  } else {
-    clearError(select, `${campo}-error`);
-    campos[campo] = true;
+    return;
   }
+
+  clearError(select, `${campo}-error`);
+  campos[campo] = true;
 };
 
-// PASO 4: Validación campos inputs type radio, no obligatorios
-// contacto_pref
+// PASO 4: Validación de checkboxes
+const validarGrupoCheckbox = (nombreGrupo, obligatorio) => {
+  const checkboxes = document.querySelectorAll(
+    `input[name="${nombreGrupo}[]"]`
+  );
+
+  let seleccionados = [];
+  checkboxes.forEach((cb) => {
+    if (cb.checked) seleccionados.push(cb.value);
+  });
+
+  // "ninguna" vs otros del grupo
+  if (seleccionados.includes("ninguna") && seleccionados.length > 1) {
+    // Solo debe quedar marcada "ninguna"
+    checkboxes.forEach((cb) => {
+      if (cb.value !== "ninguna") cb.checked = false;
+    });
+    seleccionados = ["ninguna"];
+  }
+
+  if (!seleccionados.includes("ninguna")) {
+    // Si selecciona opcion, desmarcamos "ninguna"
+    checkboxes.forEach((cb) => {
+      if (cb.value === "ninguna") cb.checked = false;
+    });
+  }
+
+  // Obligatorio?
+  if (seleccionados.length === 0 && obligatorio) {
+    showError(
+      checkboxes[0],
+      `${nombreGrupo}-error`,
+      `Seleccione al menos una opción.`
+    );
+    campos[nombreGrupo] = false;
+  } else {
+    clearError(checkboxes[0], `${nombreGrupo}-error`);
+    campos[nombreGrupo] = true;
+  }
+
+  checkboxes.forEach((checkbox) => {
+    const esNinguna = checkbox.value === "ninguna"; // Deberá ser true o false
+    if (checkbox.checked && esNinguna) {
+      checkboxes.forEach((cb) => {
+        if (cb.value != "ninguna") cb.checked = false;
+      });
+    } else if (checkbox.checked && !esNinguna) {
+      checkboxes.forEach((cb) => {
+        if (cb.value === "ninguna") cb.checked = false;
+      });
+    }
+  });
+};
 
 // PASO 2 - Accceder a los inputs (solo inputs) para darles event listeners
 inputs.forEach((input) => {
-  input.addEventListener("keyup", validarFormulario);
-  input.addEventListener("blur", validarFormulario);
-  input.addEventListener("change", validarFormulario);
+  if (input.type !== "checkbox" && input.type !== "radio") {
+    input.addEventListener("keyup", validarFormulario);
+    input.addEventListener("blur", validarFormulario);
+  } else {
+    input.addEventListener("change", validarFormulario);
+  }
 });
 
 // PASO 2 - Acceder a los select...
 selects.forEach((select) => {
   select.addEventListener("change", validarFormulario);
 });
+
+// PASO 2 - Acceder textarea...
+textarea.addEventListener("keyup", validarFormulario);
+textarea.addEventListener("blur", validarFormulario);
 
 // PASO 1 - Acceder al form
 form.addEventListener("submit", (e) => {
@@ -286,10 +437,17 @@ form.addEventListener("submit", (e) => {
     // campos["direccion"] &&
     // campos["ciudad"] &&
     // campos["cp"] &&
-    campos["altura"]
+    // campos["altura"] &&
+    // campos["peso"] &&
+    // campos["objetivos"] &&
+    // campos["condiciones"] &&
+    // campos["plan"] &&
+    // campos["dias"] &&
+    // campos["hora"] &&
+    campos["clases"]
   ) {
     alert("Enviado!");
-    form.submit();
+    // form.submit();
     // form.reset();
   } else {
     alert("Nope");

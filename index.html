@@ -264,11 +264,11 @@
               <label for="nivel">Nivel de actividad actual</label>
               <select id="nivel" name="nivel">
                 <option value="" selected>— Selecciona —</option>
-                <option>Sedentario</option>
-                <option>Ligero (1–2 días/sem)</option>
-                <option>Moderado (3–4 días/sem)</option>
-                <option>Intenso (5–6 días/sem)</option>
-                <option>Atleta</option>
+                <option value="s">Sedentario</option>
+                <option value="l">Ligero (1–2 días/sem)</option>
+                <option value="m">Moderado (3–4 días/sem)</option>
+                <option value="i">Intenso (5–6 días/sem)</option>
+                <option value="a">Atleta</option>
               </select>
             </div>
           </div>
@@ -391,11 +391,11 @@
             <div class="control">
               <label for="hora">Franja horaria preferida</label>
               <select id="hora" name="hora">
-                <option>6:00–9:00</option>
-                <option>9:00–12:00</option>
-                <option>12:00–16:00</option>
-                <option>16:00–19:00</option>
-                <option>19:00–22:00</option>
+                <option value="mañana_a">6:00–9:00</option>
+                <option value="mañana_b">9:00–12:00</option>
+                <option value="tarde_a">12:00–16:00</option>
+                <option value="tarde_b">16:00–19:00</option>
+                <option value="noche">19:00–22:00</option>
               </select>
             </div>
             <div class="control">
@@ -407,11 +407,11 @@
                 size="4"
                 aria-describedby="clases-help"
               >
-                <option>Spinning</option>
-                <option>CrossFit</option>
-                <option>Yoga</option>
-                <option>Pilates</option>
-                <option>Boxeo</option>
+                <option value="spinning">Spinning</option>
+                <option value="crossfit">CrossFit</option>
+                <option value="yoga">Yoga</option>
+                <option value="pilates">Pilates</option>
+                <option value="boxeo">Boxeo</option>
               </select>
               <div id="clases-help" class="hint">
                 Mantén Ctrl/⌘ para seleccionar varias.
